@@ -1,5 +1,4 @@
 import json
-import os
 from urllib.parse import parse_qsl, quote, unquote, urlencode, urlparse
 
 from sqlalchemy import Boolean, Column, Integer, String
@@ -33,7 +32,7 @@ class Credentials(Base):
     connections table without having to install the entire airflow
     package.
     """
-    __tablename__ = os.getenv('SQL_ALCHEMY_TABLE', 'connection')
+    __tablename__ = 'connection'
 
     id = Column(Integer(), primary_key=True)
     conn_id = Column(String(250))
