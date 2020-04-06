@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-SQL_ALCHEMY_CONN = os.getenv('SQL_ALCHEMY_CONNECTION_SCHEMA')
+SQL_ALCHEMY_CONN = os.getenv('SQL_ALCHEMY_CONN')
 
 Base = declarative_base()
 
