@@ -2,13 +2,12 @@ import json
 import os
 from urllib.parse import parse_qsl, quote, unquote, urlencode, urlparse
 
-from sqlalchemy import Boolean, Column, Integer, MetaData, String
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Boolean, Column, Integer, String
+from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import synonym
 
+from .connection import Base
 from .crypto import get_fernet
-
-metadata = MetaData(schema=os.getenv('SQL_ALCHEMY_CONNECTION_SCHEMA'))
-Base = declarative_base(metadata=metadata)
 
 
 # Python automatically converts all letters to lowercase in hostname
@@ -66,7 +65,7 @@ class Credentials(Base):
             self.extra = extra
 
     def __repr__(self) -> None:
-        return self.key
+        return self.conn_id
 
     def parse_from_uri(self, uri):
         uri_parts = urlparse(uri)
@@ -122,31 +121,41 @@ class Credentials(Base):
 
         return uri
 
-    @property
-    def password(self):
+    def get_password(self):
         if self._password and self.is_encrypted:
             fernet = get_fernet()
             return fernet.decrypt(bytes(self._password, 'utf-8')).decode()
         return self._password
 
-    @password.setter
     def set_password(self, value):
         fernet = get_fernet()
-        self._password = fernet.encrypt(bytes(value, 'utf-8')).decode()
-        self.is_encrypted = fernet.is_encrypted
+        if fernet:
+            value = fernet.encrypt(bytes(value, 'utf-8')).decode()
+        self._password = value
+        self.is_encrypted = bool(fernet)
 
-    @property
-    def extra(self):
+    @declared_attr
+    def password(cls):
+        return synonym('_password',
+                       descriptor=property(cls.get_password, cls.set_password))
+
+    def get_extra(self):
         if self._extra and self.is_extra_encrypted:
             fernet = get_fernet()
             return fernet.decrypt(bytes(self._extra, 'utf-8')).decode()
         return self._extra
 
-    @extra.setter
     def set_extra(self, value):
         fernet = get_fernet()
-        self._extra = fernet.encrypt(bytes(value, 'utf-8')).decode()
-        self.is_extra_encrypted = fernet.is_encrypted
+        if fernet:
+            value = fernet.encrypt(bytes(value, 'utf-8')).decode()
+        self._extra = value
+        self.is_extra_encrypted = bool(fernet)
+
+    @declared_attr
+    def extra(cls):
+        return synonym('_extra',
+                       descriptor=property(cls.get_extra, cls.set_extra))
 
     def rotate_fernet_key(self):
         fernet = get_fernet()
