@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='street_cred',
-    version='0.0.1',
+    version='0.0.2',
     author="Aaron Mangum",
     packages=find_packages(),
     install_requires=[
