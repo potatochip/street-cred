@@ -1,4 +1,5 @@
 import os
+import warnings
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -11,14 +12,17 @@ Session = None
 
 
 def _xconnection_str():
-    locations = ['SQL_ALCHEMY_CONN',
-                 'STREET_CRED__SQL_ALCHEMY_CONN',
-                 'AIRFLOW__CORE__SQL_ALCHEMY_CONN']
+    locations = [
+        'SQL_ALCHEMY_CONN',
+        'STREET_CRED__SQL_ALCHEMY_CONN',
+        'AIRFLOW__CORE__SQL_ALCHEMY_CONN',
+    ]
     for var in locations:
         s = os.getenv(var)
         if s:
             return s
-    return ''
+    warnings.warn('Could not find connection string in env vars.')
+    return 'sqlite://'
 
 
 def configure_orm():
@@ -34,7 +38,8 @@ def configure_orm():
 
     engine = create_engine(connection_str, **engine_args)
     Session = scoped_session(
-        sessionmaker(autocommit=False, autoflush=False, bind=engine))
+        sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    )
 
 
 configure_orm()
